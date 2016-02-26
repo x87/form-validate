@@ -1,0 +1,16 @@
+{
+    "name": "form-validate",
+    "version": "1.0.0",
+    "description": "Form Validation",
+    "dependencies": {
+        "bootstrap": "3.3.6",
+        "jquery": "2.2.1"
+    },
+    "devDependencies": {},
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/x87/form-validate.git"
+    },
+    "author": "x87",
+    "license": "ISC"
+}

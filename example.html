@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Form Validation Example</title>
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="form-validate.js"></script>
+    <script src="form-validate-client.js"></script>
+
+    <style>
+        .form-error {
+            border-color: #a94442;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-header">
+        <h1>Form Validation Example</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 col-xs-12">
+
+            <form id="example">
+                <div class="form-group">
+                    <label for="firstname">First name</label>
+                    <input class="form-control" id="firstname" type="text" value="" data-validators="required, name">
+                </div>
+                <div class="form-group">
+                    <label for="lastname">Last name</label>
+                    <input class="form-control" id="lastname" type="text" value="" data-validators="required, name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input class="form-control" id="email" type="text" value="" data-validators="required, email">
+                </div>
+
+                <button class="btn btn-primary" data-validators="submit">Submit</button>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var client = new ValidatorClient(document.querySelector('#example'))
+        })()
+    </script>
+
+</div>
+
+</body>
+</html>
