@@ -31,7 +31,7 @@ Validator.utils = (function ($) {
             $(container || document).trigger(eventName, eventData);
         },
         getElements: function (container, selector) {
-            return container.querySelectorAll(selector)
+            return [].slice.call(container.querySelectorAll(selector))
         },
         ajax: function (url, data, method) {
             return $.ajax({
@@ -141,71 +141,65 @@ Validator.prototype = {
     },
 
     attachValidator: function (element, event, cb) {
-        var self = this;
-        Validator.utils.attachListener(element, event, function () {
-            self.validateElement(element).then(cb)
+        Validator.utils.attachListener(element, event, () => {
+            this.validateElement(element).then(cb)
         });
     },
 
     validateElement: function (element) {
-        var self = this;
         var validatorString = (element.getAttribute("data-validators") || "");
         if (!validatorString.trim().length) {
             return Validator.utils.when();
         }
-        var i = 0,
+        let i = 0,
             validators = validatorString.replace(new RegExp('\\s', 'g'), '').split(','),
             queueLen = validators.length;
 
-        function next(result) {
-            var v = validators[i].split('-').shift();
-            if (!self.rules[v]) {
+        let next = (result) => {
+            let v = validators[i].split('-').shift();
+            if (!this.rules[v]) {
                 return (++i >= queueLen) ? Validator.utils.when(result) : next(result)
             }
 
-            var value = element.value;
+            let value = element.value;
 
-            return self.rules[v].call(self, value, validators[i])
+            return this.rules[v].call(this, value, validators[i])
                 .then(function (success) {
                     result[v] = success;
                     return (!success || (++i >= queueLen)) ? Validator.utils.when(result) : next(result);
                 })
         }
 
-        return next({}).then(function (result) {
-            return {
+        return next({}).then(result => ({
                 element: element,
                 result: result
-            };
-        })
+            })
+        )
     },
 
     validateForm: function (container) {
-        var elements = Validator.utils.getElements(container, "[data-validators]");
-        var requests = [];
-        for (var i = 0; i < elements.length; i += 1) {
-            var element = elements[i];
+        let elements = Validator.utils.getElements(container, "[data-validators]");
+        let requests = elements.map(element => {
+
             var validators = element.getAttribute("data-validators");
             if (!validators) {
-                continue;
+                return null;
             }
             if (~['submit'].indexOf(validators)) {
-                continue;
+                return null;
             }
-            requests.push(this.validateElement(element));
-        }
+            return this.validateElement(element);
+        }).filter(element => element)
         return Validator.utils.when.apply(null, requests)
     },
 
     addRule: function (name, validator) {
-        var patternValidator = function (config) {
+        const patternValidator = function (config) {
             var regEx = new RegExp(config.pattern, "i");
-            return function (value, name) {
-                return Validator.utils.when(regEx.test(value));
-            }
+            return (value, name) => Validator.utils.when(regEx.test(value));
         };
 
-        var ajaxValidator = function (config) {
+        const ajaxValidator = function (config) {
             var request = null;
             return function (value, name) {
                 var data = {};
@@ -227,9 +221,7 @@ Validator.prototype = {
         };
 
         if (typeof validator == 'function') {
-            this.rules[name] = function (value, name) {
-                return Validator.utils.when(validator(value, name));
-            }
+            this.rules[name] = (value, name) => Validator.utils.when(validator(value, name))
         } else if (validator.pattern) {
             this.rules[name] = new patternValidator(validator);
         } else if (validator.ajax) {
