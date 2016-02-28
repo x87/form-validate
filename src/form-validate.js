@@ -1,56 +1,58 @@
-var Validator = function (container) {
-    this.rules = {};
-    this.init(container || document);
-};
+class Validator {
 
-Validator.utils = (function ($) {
-    return {
-        removeValidator: function (element, validatorName) {
-            var validators = $(element).attr("data-validators");
-            if (!validators) return;
-            $(element).attr("data-validators", validators.replace(new RegExp('\\s', 'g'), '').split(',').filter(function (v) {
-                return v != validatorName;
-            }).join(","));
-        },
-        addValidator: function (element, validatorName) {
-            var validators = $(element).attr("data-validators");
-            if (validators) {
-                validators = validators.replace(new RegExp('\\s', 'g'), '').split(',').filter(function (v) {
-                    return v != validatorName;
-                })
-            } else {
-                validators = [];
-            }
-            validators.push(validatorName);
-            $(element).attr("data-validators", validators.join(","));
-        },
-        attachListener: function (element, event, callback) {
-            return $(element).on(event, callback);
-        },
-        trigger: function (eventName, eventData, container) {
-            $(container || document).trigger(eventName, eventData);
-        },
-        getElements: function (container, selector) {
-            return [].slice.call(container.querySelectorAll(selector))
-        },
-        ajax: function (url, data, method) {
-            return $.ajax({
-                    url: url,
-                    method: method,
-                    data: JSON.stringify(data),
-                    contentType: 'application/json'
+    constructor(container) {
+        this.rules = {};
+        this.init(container || document);
+    };
+
+    static get utils() {
+        return (function ($) {
+            return {
+                removeValidator: function (element, validatorName) {
+                    let validators = $(element).attr("data-validators");
+                    if (!validators) return;
+                    $(element).attr("data-validators", validators.replace(new RegExp('\\s', 'g'), '').split(',').filter(function (v) {
+                        return v != validatorName;
+                    }).join(","));
+                },
+                addValidator: function (element, validatorName) {
+                    let validators = $(element).attr("data-validators");
+                    if (validators) {
+                        validators = validators.replace(new RegExp('\\s', 'g'), '').split(',').filter(function (v) {
+                            return v != validatorName;
+                        })
+                    } else {
+                        validators = [];
+                    }
+                    validators.push(validatorName);
+                    $(element).attr("data-validators", validators.join(","));
+                },
+                attachListener: function (element, event, callback) {
+                    $(element).on(event, callback);
+                },
+                trigger: function (eventName, eventData, container) {
+                    $(container || document).trigger(eventName, eventData);
+                },
+                getElements: function (container, selector) {
+                    return [].slice.call(container.querySelectorAll(selector))
+                },
+                ajax: function (url, data, method) {
+                    return $.ajax({
+                            url: url,
+                            method: method,
+                            data: JSON.stringify(data),
+                            contentType: 'application/json'
+                        }
+                    );
+                },
+                when: function () {
+                    return $.when.apply($, [].slice.call(arguments));
                 }
-            );
-        },
-        when: function () {
-            return $.when.apply($, [].slice.call(arguments));
-        }
+            }
+        })(jQuery)
     }
-})(jQuery);
 
-Validator.prototype = {
-
-    init: function (container) {
+    init(container) {
         this.addRules({
             "required": {
                 pattern: "\\S"
@@ -70,84 +72,81 @@ Validator.prototype = {
             "zip": {
                 pattern: "^([\\d\\sa-zA-Z_\\.!-]*)([\\da-zA-Z]+)([\\d\\sa-zA-Z_\\.!-]*)$"
             },
-            "minlen" : function(value, name) {
-                var len = Number(name.split('-').pop());
+            "minlen": function (value, name) {
+                let len = Number(name.split('-').pop());
                 return len && value.length >= len;
             },
-            "maxlen" : function(value, name) {
-                var len = Number(name.split('-').pop());
+            "maxlen": function (value, name) {
+                let len = Number(name.split('-').pop());
                 return len && value.length <= len;
             },
-            "except" : function (value, name) {
-                var chars = name.split('-').pop();
+            "except": function (value, name) {
+                let chars = name.split('-').pop();
                 if (!chars) return false;
                 chars = "\\" + chars.split('').join("\\");
-                return !(new RegExp("["+chars+"]+")).test(value);
+                return !(new RegExp("[" + chars + "]+")).test(value);
             },
-            "only" : function (value, name) {
-                var chars = name.split('-').pop();
+            "only": function (value, name) {
+                let chars = name.split('-').pop();
                 if (!chars) return false;
                 chars = "\\" + chars.split('').join("\\");
-                return (new RegExp("^["+chars+"]+$")).test(value);
+                return (new RegExp("^[" + chars + "]+$")).test(value);
             }
         });
 
-        var self = this;
-        var elements = Validator.utils.getElements(container, "[data-validators]");
-        for (var i = 0; i < elements.length; i += 1) {
+        let elements = Validator.utils.getElements(container, "[data-validators]");
+        elements.forEach(element => {
 
-            var element = elements[i];
-            var validators = element.getAttribute("data-validators");
+            let validators = element.getAttribute("data-validators");
             if (~['submit'].indexOf(validators)) {
 
-                var $form = $(element).parents('form');
+                let $form = $(element).parents('form');
                 if (!$form.length) {
-                    continue;
+                    return;
                 }
 
-                (function () {
-                    var form = $form[0];
-                    var submit = element;
-                    Validator.utils.attachListener(element, "click", function (event) {
-                        event.preventDefault();
-                        self.onSubmit(form, submit, container);
-                    });
-                })();
+                let callback = ((form, submit) => (event) => {
+                    event.preventDefault();
+                    this.onSubmit(form, submit, container);
+                })($form[0], element)
+
+                Validator.utils.attachListener(element, "click", callback);
+
 
             } else {
-                this.attachValidator(element, "focusout", function (result) {
+                this.attachValidator(element, "focusout", (result) => {
                     if (result) {
                         Validator.utils.trigger("validation.onElementValidation", result, container);
                     }
                 });
             }
-        }
-    },
+        })
+    }
 
-    onSubmit: function (form, submit, container) {
+    onSubmit(form, submit, container) {
         this.validateForm(form).then(function () {
-            var args = [].slice.call(arguments);
-            var validators = submit.getAttribute("data-validators");
+            let args = [].slice.call(arguments);
+            let validators = submit.getAttribute("data-validators");
             if (!validators) {
                 return false;
             }
 
-            args.forEach(function(arg) {
+            args.forEach(function (arg) {
                 Validator.utils.trigger("validation.onElementValidation", arg, container);
             })
             Validator.utils.trigger("validation.onFormValidation", {form: form, result: args}, container);
         });
         return false;
-    },
+    }
 
-    attachValidator: function (element, event, cb) {
+    attachValidator(element, event, cb) {
         Validator.utils.attachListener(element, event, () => {
             this.validateElement(element).then(cb)
         });
-    },
+    }
 
-    validateElement: function (element) {
-        var validatorString = (element.getAttribute("data-validators") || "");
+    validateElement(element) {
+        let validatorString = (element.getAttribute("data-validators") || "");
         if (!validatorString.trim().length) {
             return Validator.utils.when();
         }
@@ -156,16 +155,15 @@ Validator.prototype = {
             queueLen = validators.length;
 
         let next = (result) => {
-            let v = validators[i].split('-').shift();
-            if (!this.rules[v]) {
+            let ruleName = validators[i].split('-').shift();
+
+            if (!this.rules[ruleName]) {
                 return (++i >= queueLen) ? Validator.utils.when(result) : next(result)
             }
 
-            let value = element.value;
-
-            return this.rules[v].call(this, value, validators[i])
+            return this.rules[ruleName].call(this, element.value, validators[i])
                 .then(function (success) {
-                    result[v] = success;
+                    result[ruleName] = success;
                     return (!success || (++i >= queueLen)) ? Validator.utils.when(result) : next(result);
                 })
         }
@@ -175,13 +173,13 @@ Validator.prototype = {
                 result: result
             })
         )
-    },
+    }
 
-    validateForm: function (container) {
+    validateForm(container) {
         let elements = Validator.utils.getElements(container, "[data-validators]");
         let requests = elements.map(element => {
 
-            var validators = element.getAttribute("data-validators");
+            let validators = element.getAttribute("data-validators");
             if (!validators) {
                 return null;
             }
@@ -191,46 +189,51 @@ Validator.prototype = {
             return this.validateElement(element);
         }).filter(element => element)
         return Validator.utils.when.apply(null, requests)
-    },
+    }
 
-    addRule: function (name, validator) {
-        const patternValidator = function (config) {
-            var regEx = new RegExp(config.pattern, "i");
-            return (value, name) => Validator.utils.when(regEx.test(value));
-        };
-
-        const ajaxValidator = function (config) {
-            var request = null;
-            return function (value, name) {
-                var data = {};
-                data[config.ajax.param] = value;
-                if (request && typeof request.abort == 'function') {
-                    request.abort();
-                }
-                var defer = $.Deferred();
-                request = Validator.utils.ajax(config.ajax.url, data, config.ajax.method || "POST");
-                request.then(function (response) {
-                    defer.resolve(response.success);
-                    request = null;
-                }).fail(function () {
-                    defer.resolve(false);
-                    request = null;
-                });
-                return defer.promise();
+    addRule(name, validator) {
+        class PatternValidator {
+            constructor(config) {
+                let regEx = new RegExp(config.pattern, "i");
+                return (value, name) => Validator.utils.when(regEx.test(value));
             }
-        };
+        }
+
+        class AjaxValidator {
+            constructor(config) {
+                let request = null;
+                return function (value, name) {
+                    const data = {
+                        [config.ajax.param]: value
+                    };
+                    if (request && typeof request.abort == 'function') {
+                        request.abort();
+                    }
+                    let defer = $.Deferred();
+                    request = Validator.utils.ajax(config.ajax.url, data, config.ajax.method || "POST");
+                    request.then(function (response) {
+                        defer.resolve(response.success);
+                        request = null;
+                    }).fail(function () {
+                        defer.resolve(false);
+                        request = null;
+                    });
+                    return defer.promise();
+                }
+            };
+        }
 
         if (typeof validator == 'function') {
             this.rules[name] = (value, name) => Validator.utils.when(validator(value, name))
         } else if (validator.pattern) {
-            this.rules[name] = new patternValidator(validator);
+            this.rules[name] = new PatternValidator(validator);
         } else if (validator.ajax) {
-            this.rules[name] = new ajaxValidator(validator);
+            this.rules[name] = new AjaxValidator(validator);
         }
-    },
+    }
 
-    addRules: function (rules) {
-        for (var rule in rules) {
+    addRules(rules) {
+        for (let rule in rules) {
             if (rules.hasOwnProperty(rule)) {
                 this.addRule(rule, rules[rule])
             }
