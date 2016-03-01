@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Form Validation Example</title>
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
-    <script src="node_modules/jquery/dist/jquery.min.js"></script>
-    <script src="dist/form-validate.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../dist/form-validate.js"></script>
     <script src="form-validate-client.js"></script>
 
     <style>
@@ -38,6 +38,10 @@
                     <label for="email">Email</label>
                     <input class="form-control" id="email" type="text" value="" data-validators="required, email">
                 </div>
+                <div class="form-group">
+                    <label for="ajax">AjaxTest</label>
+                    <input class="form-control" id="ajax" type="text" value="" data-validators="ajaxTest">
+                </div>
 
                 <button class="btn btn-primary" data-validators="submit">Submit</button>
             </form>
@@ -48,6 +52,13 @@
     <script>
         (function () {
             var client = new ValidatorClient(document.querySelector('#example'))
+            client.validator.addRule('ajaxTest', {
+                ajax: {
+                        param: "test",
+                        url: "test_ajax.json",
+                        method: "GET"
+                    }
+            })
         })()
     </script>
 
