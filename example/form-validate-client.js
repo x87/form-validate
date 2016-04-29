@@ -23,9 +23,9 @@ ValidatorClient.prototype = {
 
         $(container).on("validation.onFormValidation", function (e, data) {
             if (self.isFormValid(data)) {
-                HTMLFormElement.prototype.submit.call(data.form);
+                self.onFormSuccessValidation(data);
             } else {
-                alert(self.getFormErrorMessage(data));
+                self.onFormFailValidation(data);
             }
         });
 
@@ -92,5 +92,11 @@ ValidatorClient.prototype = {
             }
         }
         return true;
+    },
+    onFormSuccessValidation: function (data) {
+        HTMLFormElement.prototype.submit.call(data.form);
+    },
+    onFormFailValidation: function (data) {
+        alert(this.getFormErrorMessage(data));
     }
 };
