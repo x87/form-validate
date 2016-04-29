@@ -60,7 +60,7 @@ ValidatorClient.prototype = {
                     if (data.result[validator]) {
                         continue;
                     }
-                    if (validator == 'required') {
+                    if (validator == 'required' || validator == 'radio') {
                         return name + ' is required';
                     }
                     else {

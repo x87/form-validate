@@ -72,25 +72,31 @@ class Validator {
             "zip": {
                 pattern: "^([\\d\\sa-zA-Z_\\.!-]*)([\\da-zA-Z]+)([\\d\\sa-zA-Z_\\.!-]*)$"
             },
-            "minlen": function (value, name) {
+            "minlen": function (value, name, element) {
                 let len = Number(name.split('-').pop());
                 return len && value.length >= len;
             },
-            "maxlen": function (value, name) {
+            "maxlen": function (value, name, element) {
                 let len = Number(name.split('-').pop());
                 return len && value.length <= len;
             },
-            "except": function (value, name) {
+            "except": function (value, name, element) {
                 let chars = name.split('-').pop();
                 if (!chars) return false;
                 chars = "\\" + chars.split('').join("\\");
                 return !(new RegExp("[" + chars + "]+")).test(value);
             },
-            "only": function (value, name) {
+            "only": function (value, name, element) {
                 let chars = name.split('-').pop();
                 if (!chars) return false;
                 chars = "\\" + chars.split('').join("\\");
                 return (new RegExp("^[" + chars + "]+$")).test(value);
+            },
+            "radio" : function (value, name, element) {
+                var elementName = element.name || "";
+                if (!elementName) return element.checked;
+                var elements = Validator.utils.getElements(container, "[name='" + elementName + "']:checked");
+                return elements.length > 0;
             }
         });
 
@@ -161,7 +167,7 @@ class Validator {
                 return (++i >= queueLen) ? Validator.utils.when(result) : next(result)
             }
 
-            return this.rules[ruleName].call(this, element.value, validators[i])
+            return this.rules[ruleName].call(this, element.value, validators[i], element)
                 .then(function (success) {
                     result[ruleName] = success;
                     return (!success || (++i >= queueLen)) ? Validator.utils.when(result) : next(result);
@@ -195,14 +201,14 @@ class Validator {
         class PatternValidator {
             constructor(config) {
                 let regEx = new RegExp(config.pattern, "i");
-                return (value, name) => Validator.utils.when(regEx.test(value));
+                return (value, name, element) => Validator.utils.when(regEx.test(value));
             }
         }
 
         class AjaxValidator {
             constructor(config) {
                 let request = null;
-                return function (value, name) {
+                return function (value, name, element) {
                     const data = {
                         [config.ajax.param]: value
                     };
@@ -224,7 +230,7 @@ class Validator {
         }
 
         if (typeof validator == 'function') {
-            this.rules[name] = (value, name) => Validator.utils.when(validator(value, name))
+            this.rules[name] = (value, name, element) => Validator.utils.when(validator(value, name, element))
         } else if (validator.pattern) {
             this.rules[name] = new PatternValidator(validator);
         } else if (validator.ajax) {
