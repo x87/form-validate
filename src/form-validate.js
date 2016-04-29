@@ -67,7 +67,7 @@ class Validator {
                 pattern: "^([\\d\\sa-zA-Z_\\.!-]*)([\\da-zA-Z]+)([\\d\\sa-zA-Z_\\.!-]*)$"
             },
             "number": {
-                pattern: "^[\\d]+$"
+                pattern: "^[\\d]*$"
             },
             "zip": {
                 pattern: "^([\\d\\sa-zA-Z_\\.!-]*)([\\da-zA-Z]+)([\\d\\sa-zA-Z_\\.!-]*)$"
