@@ -114,10 +114,9 @@ class Validator {
                 let callback = ((form, submit) => (event) => {
                     event.preventDefault();
                     this.onSubmit(form, submit, container);
-                })($form[0], element)
+                })($form[0], element);
 
                 Validator.utils.attachListener(element, "click", callback);
-
 
             } else {
                 this.attachValidator(element, "focusout", (result) => {
@@ -139,7 +138,7 @@ class Validator {
 
             args.forEach(function (arg) {
                 Validator.utils.trigger("validation.onElementValidation", arg, container);
-            })
+            });
             Validator.utils.trigger("validation.onFormValidation", {form: form, result: args}, container);
         });
         return false;
@@ -172,7 +171,7 @@ class Validator {
                     result[ruleName] = success;
                     return (!success || (++i >= queueLen)) ? Validator.utils.when(result) : next(result);
                 })
-        }
+        };
 
         return next({}).then(result => ({
                 element: element,
@@ -193,7 +192,7 @@ class Validator {
                 return null;
             }
             return this.validateElement(element);
-        }).filter(element => element)
+        }).filter(element => element);
         return Validator.utils.when.apply(null, requests)
     }
 
@@ -215,13 +214,18 @@ class Validator {
                     if (request && typeof request.abort == 'function') {
                         request.abort();
                     }
+                    // todo: remove $ dependency
                     let defer = $.Deferred();
                     request = Validator.utils.ajax(config.ajax.url, data, config.ajax.method || "POST");
                     request.then(function (response) {
                         defer.resolve(response.success);
                         request = null;
-                    }).fail(function () {
-                        defer.resolve(false);
+                    }).fail(function (e, status) {
+                        if (status == 'abort') {
+                            defer.reject();
+                        } else {
+                            defer.resolve(false);
+                        }
                         request = null;
                     });
                     return defer.promise();
@@ -245,4 +249,4 @@ class Validator {
             }
         }
     }
-};
+}
